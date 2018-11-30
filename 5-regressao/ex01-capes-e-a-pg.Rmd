@@ -1,5 +1,5 @@
 ---
-title: "RegressÃ£o linear na prÃ¡tica"
+title: "Regressão linear na prática"
 output: html_notebook
 ---
 
@@ -10,36 +10,34 @@ library(modelr)
 theme_set(theme_bw())
 ```
 
-## Dados da CAPES sobre avaliaÃ§Ã£o da pÃ³s-graduaÃ§Ã£o
+## Dados da CAPES sobre avaliação da pós-graduação
 
-A CAPES Ã© um Ã³rgÃ£o do MEC que tem a atribuiÃ§Ã£o de acompanhar a pÃ³s-graduaÃ§Ã£o na universidade brasileira. Uma das formas que ela encontrou de fazer isso e pela qual ela Ã© bastante criticada Ã© atravÃ©s de uma avaliaÃ§Ã£o quantitativa a cada x anos (era 3, mudou para 4). 
+A CAPES é um órgão do MEC que tem a atribuição de acompanhar a pós-graduação na universidade brasileira. Uma das formas que ela encontrou de fazer isso e pela qual ela é bastante criticada é através de uma avaliação quantitativa a cada x anos (era 3, mudou para 4). 
 
-Usaremos dados da penÃºltima avaliaÃ§Ã£o da CAPES: 
+Usaremos dados da penúltima avaliação da CAPES: 
 
 ```{r}
 cacc_raw = read_csv("https://raw.githubusercontent.com/nazareno/ciencia-de-dados-1/master/3-Agrupamento-e-PCA/dados/capes-cacc.csv", col_types = "") %>% 
   mutate_all(funs(replace(., is.na(.), 0))) %>% 
   filter(Teses + Dissertacoes > 0)
-
 glimpse(cacc_raw)
 ```
 
-## Fatores associados com produÃ§Ã£o de artigos
+## Fatores associados com produção de artigos
 
-Uma das maneiras de avaliar a produÃ§Ã£o dos docentes que a CAPES utiliza Ã© quantificando a produÃ§Ã£o de artigos pelos docentes. Os artigos sÃ£o categorizados em extratos ordenados (A1 Ã© o mais alto), e separados entre artigos em conferÃªncias e periÃ³dicos. Usaremos para esse lab a produÃ§Ã£o em periÃ³dicos avaliados com A1, A2 e B1.
+Uma das maneiras de avaliar a produção dos docentes que a CAPES utiliza é quantificando a produção de artigos pelos docentes. Os artigos são categorizados em extratos ordenados (A1 é o mais alto), e separados entre artigos em conferências e periódicos. Usaremos para esse lab a produção em periódicos avaliados com A1, A2 e B1.
 
 ```{r}
 cacc = cacc_raw %>% 
   mutate(producao = periodicos_A1 + periodicos_A2 + periodicos_B1) 
-
 cacc %>% 
   ggplot(aes(x = producao)) + 
   geom_histogram(bins = 15)
 ```
 
-Se quisermos modelar o efeito do tamanho do programa em termos de docentes (permanentes) na quantidade de artigos publicados, podemos usar regressÃ£o. 
+Se quisermos modelar o efeito do tamanho do programa em termos de docentes (permanentes) na quantidade de artigos publicados, podemos usar regressão. 
 
-*Importante*: sempre queremos ver os dados antes de fazermos qualquer modelo ou sumÃ¡rio: 
+*Importante*: sempre queremos ver os dados antes de fazermos qualquer modelo ou sumário: 
 
 ```{r}
 cacc %>% 
@@ -47,11 +45,10 @@ cacc %>%
   geom_point()
 ```
 
-Parece que existe uma relaÃ§Ã£o. Vamos criar um modelo entÃ£o:
+Parece que existe uma relação. Vamos criar um modelo então:
 
 ```{r}
 modelo1 = lm(producao ~ `Docentes permanentes`, data = cacc)
-
 tidy(modelo1, conf.int = TRUE, conf.level = 0.95)
 glance(modelo1)
 ```
@@ -61,41 +58,37 @@ Para visualizar o modelo:
 ```{r}
 cacc_augmented = cacc %>% 
   add_predictions(modelo1) 
-
 cacc_augmented %>% 
   ggplot(aes(x = `Docentes permanentes`)) + 
   geom_line(aes(y = pred), colour = "brown") + 
   geom_point(aes(y = producao)) + 
-  labs(y = "ProduÃ§Ã£o do programa")
-
+  labs(y = "Produção do programa")
 ```
 
-Se considerarmos que temos apenas uma amostra de todos os programas de pÃ³s em CC no Brasil, o que podemos inferir a partir desse modelo sobre a relaÃ§Ã£o entre nÃºmero de docentes permanentes e produÃ§Ã£o de artigos em programas de pÃ³s? 
+Se considerarmos que temos apenas uma amostra de todos os programas de pós em CC no Brasil, o que podemos inferir a partir desse modelo sobre a relação entre número de docentes permanentes e produção de artigos em programas de pós? 
 
 -----
 
-**EXPLICAÃ‡ÃƒO**: *Substitua esse texto por seu comentÃ¡rio. Comente tanto sobre as relaÃ§Ãµes entre as variÃ¡veis (significÃ¢ncia e relevÃ¢ncia do efeito) quanto o quÃ£o bem o modelo explica os dados.*
+**EXPLICAÇÃO**: As variáveis possui a seguinte relação, quanto menos Docentes Permanentes menos haverá produção de artigos em programas de pós, e vice-versa. O modelo consegue explicar 80% da variacação dos dados, pois o R²(r quadrado) possui valor de 0.8145886, ou seja, o modelo explica bem os dados e existe uma forte correlação entre as variáveis.
 
 -----
 
-Algum palpite de por que a relaÃ§Ã£o existe como ela existe em termos de forÃ§a?
+Algum palpite de por que a relação existe como ela existe em termos de força?
 
 ## Mais fatores
 
-E se considerarmos tambÃ©m o nÃºmero de alunos?
+E se considerarmos também o número de alunos?
 
 ```{r}
 cacc = cacc %>% 
   mutate(mestrados_pprof = Dissertacoes / `Docentes permanentes`, 
          doutorados_pprof = Teses / `Docentes permanentes`)
-
 modelo2 = lm(producao ~ `Docentes permanentes` + mestrados_pprof + doutorados_pprof, data = cacc)
-
 tidy(modelo2, conf.int = TRUE, conf.level = 0.95)
 glance(modelo2)
 ```
 
-Visualizar o modelo com muitas variÃ¡veis independentes fica mais difÃ­cil
+Visualizar o modelo com muitas variáveis independentes fica mais difícil
 
 ```{r}
 para_plotar_modelo = cacc %>% 
@@ -105,9 +98,7 @@ para_plotar_modelo = cacc %>%
             mestrados_pprof = median(mestrados_pprof),
             doutorados_pprof = seq_range(doutorados_pprof, 3)) %>% 
   add_predictions(modelo2)
-
 glimpse(para_plotar_modelo)
-
 ```
 
 ```{r}
@@ -118,19 +109,53 @@ para_plotar_modelo %>%
   geom_point(data = cacc, aes(y = producao, colour = doutorados_pprof))
 ```
 
-Considerando agora esses trÃªs fatores, o que podemos dizer sobre como cada um deles se relaciona com a produÃ§Ã£o de um programa de pÃ³s em CC? E sobre o modelo? Ele explica mais que o modelo 1? 
+Considerando agora esses três fatores, o que podemos dizer sobre como cada um deles se relaciona com a produção de um programa de pós em CC? E sobre o modelo? Ele explica mais que o modelo 1? 
 
 -----
 
-**EXPLICAÃ‡ÃƒO**: *Substitua esse texto por seu comentÃ¡rio. Comente tanto sobre as relaÃ§Ãµes entre as variÃ¡veis (significÃ¢ncia e relevÃ¢ncia do efeito) quanto o quÃ£o bem o modelo explica os dados.*
+**EXPLICAÇÃO**: A relação de que, quanto menos Docentes Permanentes, menos haverá produção de artigos, e vice-versa, continua valendo, porém quando se trata do número de doutorandos, vemos que, quanto maior esse número maior é a produção, e no caso dos número de mestrandos, é dificil de ver a relação deste com a produção.
+Esse modelo explica melhor do que o modelo 1, pois o valor de R²(r quadrado) é maior do que o do modelo anterior, e por isso ele explica bem a variação dos dados, e a relação entre esses três fatores e a produção.
 
 -----
 
 ## Agora produtividade 
 
-Diferente de medirmos produÃ§Ã£o (total produzido), Ã© medirmos produtividade (produzido / utilizado). Abaixo, crie um modelo que investigue como um conjunto de fatores que vocÃª julga que sÃ£o relevantes se relacionam com a produtividade dos programas. Ou seja: 
+Diferente de medirmos produção (total produzido), é medirmos produtividade (produzido / utilizado). Abaixo, crie um modelo que investigue como um conjunto de fatores que você julga que são relevantes se relacionam com a produtividade dos programas. Ou seja: 
 
-  * Crie uma variÃ¡vel produtividade baseada na produÃ§Ã£o e nos docentes permanentes
-  * Crie um modelo que avalie como pelo menos 4 fatores se relacionam com a produtividade de um programa. Pode reutilizar fatores que jÃ¡ definimos e analizamos para produÃ§Ã£o. Mas cuidado para nÃ£o incluir fatores que sejam funÃ§Ã£o linear de outros jÃ¡ incluÃ­dos (ex: incluir A, B e um tercero C=A+B)
+  * Crie uma variável produtividade baseada na produção e nos docentes permanentes
+  * Crie um modelo que avalie como pelo menos 4 fatores se relacionam com a produtividade de um programa. Pode reutilizar fatores que já definimos e analizamos para produção. Mas cuidado para não incluir fatores que sejam função linear de outros já incluídos (ex: incluir A, B e um tercero C=A+B)
 
-Produza abaixo o modelo e um texto que comente (i) o modelo, tal como os que fizemos antes, e (ii) uma comparaÃ§Ã£o entre as relaÃ§Ãµes que vocÃª viu nesse modelo e no anterior (de produÃ§Ã£o) e por que as relaÃ§Ãµes encontradas foram diferentes (se foram).
+Produza abaixo o modelo e um texto que comente (i) o modelo, tal como os que fizemos antes, e (ii) uma comparação entre as relações que você viu nesse modelo e no anterior (de produção) e por que as relações encontradas foram diferentes (se foram).
+
+```{r}
+cacc = cacc_augmented %>% 
+  mutate(produtividade = producao / `Docentes permanentes`)
+```
+
+```{r}
+modelo3 = lm(produtividade ~ periodicos_A1 + Teses + periodicos_B1 + `Artigos em conf`, data = cacc)
+tidy(modelo3, conf.int = TRUE, conf.level = 0.95)
+glance(modelo3)
+```
+```{r}
+para_plotar_modelo_3 = cacc %>% 
+  data_grid(produtividade = seq_range(produtividade, 4), # Crie um vetor de 10 valores no range
+            periodicos_A1 = seq_range(periodicos_A1, 3),
+            Teses = seq_range(Teses, 3),
+            periodicos_B1 = seq_range(periodicos_B1, 3),
+            `Artigos em conf` = seq_range(`Artigos em conf`, 3))%>% 
+  add_predictions(modelo3)
+glimpse(para_plotar_modelo_3)
+```
+```{r}
+para_plotar_modelo_3 %>% 
+  ggplot(aes(x = periodicos_B1 , y = pred)) + 
+  #geom_line(aes(group = periodicos_B1 , colour = periodicos_B1 )) + 
+  # facet_grid(. ~ mestrados_pprof) + 
+  geom_point(data = cacc, aes(y = produtividade))
+```
+
+**EXPLICAÇÃO**:
+
+O modelo não explica tão bem os dados, podemos ver que o valor de R²(r quadrado) não é tão próximo de 1. Portanto, este não é capaz de dizer quais dos fatores escohidos tem uma relação maior com a produtividade.
+Neste modelo, só foi possível ver que existe uma relação entre periodicos_B1 e produtividade, quantos menos tiverem periodicos_B1 menor será a produtividade, e vice-versa. Equanto que no modelo anterior foi possível perceber a relação da produção com dois fatores. Talvez, para este modelo 3, não consegui escolher os melhores fatores que se relacionam bem com a produtividade.
